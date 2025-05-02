@@ -1,10 +1,10 @@
 
-import { sprintf, __ } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { registerPaymentMethod } from '@woocommerce/blocks-registry';
 import { decodeEntities } from '@wordpress/html-entities';
 import { getSetting } from '@woocommerce/settings';
 
-const settings = getSetting( 'hubtel_data', {} );
+const settings = getSetting( 'payments-hubtel_data', {} );
 
 const defaultLabel = __(
 	'Mobile Money / Card',
@@ -12,7 +12,7 @@ const defaultLabel = __(
 );
 
 const label = decodeEntities( settings.title ) || defaultLabel;
-const logo = decodeEntities( settings.logo ) || defaultLabel;
+const logo = decodeEntities( settings.logo );// || defaultLabel;
 
 /**
  * Content component
