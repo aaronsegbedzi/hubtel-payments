@@ -27,7 +27,8 @@ __[Privacy Policy](https://excelliumgh.com/cdn/plugins/woo-hubtel/privacy)
 
 == Installation ==
 
-- Go to your Plugin section inside your WordPress dashboard and search for __Hubtel WordPress Plugin__
+- From your WordPress dashboard, visit Plugins > Add New
+- In the search field, type Payments for Hubtel
 - Install and activate the plugin
 
 == Frequently Asked Questions ==
