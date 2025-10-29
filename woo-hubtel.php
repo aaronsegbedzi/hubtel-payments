@@ -4,10 +4,10 @@
  * Plugin Name: Payments for Hubtel
  * Plugin URI: https://github.com/kmtwum/hubtel-payments
  * Description: Accept payments on your WooCommerce powered website directly to your Hubtel account.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.3
  * Requires PHP: 7.4
- * Tested up to: 6.5
+ * Tested up to: 6.8
  * Author: Kwame Twum
  * Author URI: https://github.com/kmtwum
  * WC requires at least: 7.0
@@ -104,7 +104,7 @@ class Hubtel {
 	 * @return string
 	 */
 	public static function version() {
-		return '1.0.0';
+		return '1.0.1';
 	}
 
 	/**

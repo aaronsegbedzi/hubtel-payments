@@ -3,8 +3,8 @@ Contributors: kmtwum
 Donate link: https://ko-fi.com/Y8Y6QZE79
 Tags: hubtel, woocommerce, visa, mobile money, ghana
 Requires at least: 6.3
-Tested up to: 6.5
-Stable tag: 1.0.0
+Tested up to: 6.8
+Stable tag: 1.0.1
 Requires PHP: 7.4
 License: GNU General Public License v3.0
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -27,8 +27,8 @@ __[Privacy Policy](https://excelliumgh.com/cdn/plugins/woo-hubtel/privacy)
 
 == Installation ==
 
-- From your WordPress dashboard, visit Plugins > Add New
-- In the search field, type Payments for Hubtel
+- From your WordPress dashboard, visit __Plugins__ > __Add New__
+- In the search field, type __Payments for Hubtel__
 - Install and activate the plugin
 
 == Frequently Asked Questions ==
@@ -40,12 +40,7 @@ NOTE: There are two types of users on Hubtel
 - Customers or Consumers
 - Merchants or Businesses
 
-Depending on the type of user you are, your process of obtaining your client keys will differ.
-
- __CONSUMERS__
-- Client ID - Obtained from: https://developers.hubtel.com/manage-keys
-- Client Secret - Obtained: from https://developers.hubtel.com/manage-keys
-- Plugin activation key - Click to purchase: https://paystack.com/pay/hubtel-activate
+Hubtel enables Payments only for businesses at the moment
 
 __MERCHANTS__
 - API Key (password) - Obtained from: https://bo.hubtel.com/app/manage-business/programmable-keys
@@ -66,6 +61,10 @@ Once you have all these details, go back to the plugin settings page and enter t
 3. Hubtel on WooCommerce Checkout
 
 == Changelog ==
+
+= 1.0.1 =
+* Dropped buggy alert in checkout
+* Tested against updated WP versions
 
 = 1.0.0 =
 * First release.
