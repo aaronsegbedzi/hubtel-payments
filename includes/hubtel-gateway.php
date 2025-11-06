@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Hubtel_Gateway class
  *
@@ -8,7 +9,7 @@
  */
 
 // Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
@@ -18,7 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @class    Hubtel_Gateway
  * @version  1.0.0
  */
-class Hubtel_Gateway extends WC_Payment_Gateway {
+class Hubtel_Gateway extends WC_Payment_Gateway
+{
 
 	public $clientId;
 	public $activation;
@@ -33,135 +35,154 @@ class Hubtel_Gateway extends WC_Payment_Gateway {
 	/**
 	 * Constructor for the gateway.
 	 */
-	public function __construct() {
+	public function __construct()
+	{
 		$this->id         = 'payments-hubtel';
 		$this->icon       = Hubtel::plugin_url() . '/assets/hubtel.png';
 		$this->has_fields = false;
 
-		$this->method_title       = _x( 'Mobile Money / Cards', 'Hubtel payment method', 'payments-hubtel' );
-		$this->method_description = __( 'Pay with mobile money or a Ghana issued card.', 'payments-hubtel' );
+		$this->method_title       = _x('Mobile Money / Cards', 'Hubtel payment method', 'payments-hubtel');
+		$this->method_description = __('Pay with mobile money or a Ghana issued card.', 'payments-hubtel');
 
 		// Load the settings.
 		$this->init_settings();
 		$this->init_form_fields();
 
 		// Define user set variables.
-		$this->title       = $this->get_option( 'title' );
-		$this->description = $this->get_option( 'description' );
+		$this->title       = $this->get_option('title');
+		$this->description = $this->get_option('description');
+		$this->auto_complete = 'yes' === $this->get_option('auto_complete', 'no');
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, [ $this, 'process_admin_options' ] );
-		add_action( 'woocommerce_api_hubtel_gateway', [ $this, 'direct_feedback' ] );
-		add_action( 'woocommerce_api_hubtel_gateway_delayed', [ $this, 'delayed_feedback' ] );
-		add_action( 'woocommerce_before_thankyou', [ $this, 'success_message_after_payment' ] );
-		add_action( 'admin_enqueue_scripts', [ $this, 'admin_scripts' ] );
+		add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+		add_action('woocommerce_api_hubtel_gateway', [$this, 'direct_feedback']);
+		add_action('woocommerce_api_hubtel_gateway_delayed', [$this, 'delayed_feedback']);
+		// add_action('woocommerce_before_thankyou', [$this, 'success_message_after_payment']);
+		add_action('admin_enqueue_scripts', [$this, 'admin_scripts']);
 	}
 
 	/**
 	 * Initialise Gateway Settings Form Fields.
 	 */
-	public function init_form_fields() {
+	public function init_form_fields()
+	{
 		$valid_message = "<br> Status: <span style='padding: 1px 5px 3px 5px; border-radius: 5px; color:white; background-color: #aaa'>Invalid / Empty Code</span> <br>";
 		if (isset($this->settings['activation_code'])) {
-			$validity = $this->validate_request( $this->settings['activation_code'] );
-			if ( $validity && $validity->valid ) {
+			$validity = $this->validate_request($this->settings['activation_code']);
+			if ($validity && $validity->valid) {
 				$valid_message = "<br> Status: <span style='padding: 1px 5px 3px 5px; border-radius: 5px; color:white; background-color: #00c731'>Activated</span> <br>
-            Expires on " . gmdate( 'jS F Y', strtotime( $validity->validTill ) ) . ".";
-			} elseif ( $validity && $validity->validTill != null ) {
+            Expires on " . gmdate('jS F Y', strtotime($validity->validTill)) . ".";
+			} elseif ($validity && $validity->validTill != null) {
 				$valid_message = "<br> Status: <span style='padding: 1px 5px 3px 5px; border-radius: 5px; color:white; background-color: #bb0000'>Expired</span> <br>
-            Expired on " . gmdate( 'jS F Y', strtotime( $validity->validTill ) ) . "Please purchase a new code.";
+            Expired on " . gmdate('jS F Y', strtotime($validity->validTill)) . "Please purchase a new code.";
 			}
 		}
 		$this->form_fields = [
 			'enabled'                 => [
-				'title'   => __( 'Enable/Disable', 'payments-hubtel' ),
+				'title'   => __('Enable/Disable', 'payments-hubtel'),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Payments for Hubtel', 'payments-hubtel' ),
+				'label'   => __('Enable Payments for Hubtel', 'payments-hubtel'),
 				'default' => 'no',
 			],
 			'title'                   => [
-				'title'       => __( 'Title', 'payments-hubtel' ),
+				'title'       => __('Title', 'payments-hubtel'),
 				'type'        => 'text',
-				'label'       => __( 'Mobile money / Cards', 'payments-hubtel' ),
-				'description' => __( 'The title a user will see representing Payments for Hubtel.', 'payments-hubtel' ),
+				'label'       => __('Mobile money / Cards', 'payments-hubtel'),
+				'description' => __('The title a user will see representing Payments for Hubtel.', 'payments-hubtel'),
 				'default'     => 'Mobile money / Cards',
 			],
 			'description'             => [
-				'title'       => __( 'Description', 'payments-hubtel' ),
+				'title'       => __('Description', 'payments-hubtel'),
 				'type'        => 'text',
-				'label'       => __( 'Pay with mobile money or a Ghana issued card.', 'payments-hubtel' ),
-				'description' => __( 'The description a user will see on checkout representing Payments for Hubtel',
-					'payments-hubtel' ),
+				'label'       => __('Pay with mobile money or a Ghana issued card.', 'payments-hubtel'),
+				'description' => __(
+					'The description a user will see on checkout representing Payments for Hubtel',
+					'payments-hubtel'
+				),
 				'default'     => 'Pay with mobile money or a Ghana issued card.',
 			],
+			'auto_complete' => [
+				'title'       => __('Auto-Complete Orders', 'payments-hubtel'),
+				'label'       => __('Automatically mark orders as completed after successful payment', 'payments-hubtel'),
+				'type'        => 'checkbox',
+				'description' => __('If enabled, orders will automatically move to "Completed" status once payment is confirmed.', 'payments-hubtel'),
+				'default'     => 'no',
+				'desc_tip'    => true,
+			],
 			'merchant_options'        => [
-				'title'       => __( 'Hubtel Options', 'payments-hubtel' ),
+				'title'       => __('Hubtel Options', 'payments-hubtel'),
 				'type'        => 'title',
-				'description' => __( "The following options affect where your funds will be sent when users pay.
-                \r\n Use only if you have a fund collection account", 'payments-hubtel' ),
+				'description' => __("The following options affect where your funds will be sent when users pay.
+                \r\n Use only if you have a fund collection account", 'payments-hubtel'),
 				'id'          => 'merchant_options'
 			],
 			'user_type'               => [
-				'title'       => __( 'User Type', 'payments-hubtel' ),
+				'title'       => __('User Type', 'payments-hubtel'),
 				'type'        => 'select',
-				'description' => __( 'Specify whether you\'re a merchant or a normal customer.', 'payments-hubtel' ),
+				'description' => __('Specify whether you\'re a merchant or a normal customer.', 'payments-hubtel'),
 				'default'     => '',
 				'desc_tip'    => false,
 				'options'     => [
-					''         => __( 'Select Type', 'payments-hubtel' ),
-					'merchant' => __( 'Merchant', 'payments-hubtel' ),
-					'consumer' => __( 'Customer / Consumer', 'payments-hubtel' ),
+					''         => __('Select Type', 'payments-hubtel'),
+					'merchant' => __('Merchant', 'payments-hubtel'),
+					'consumer' => __('Customer / Consumer', 'payments-hubtel'),
 				],
 			],
 			'mobile_number'           => [
-				'title'       => __( 'Your Mobile Number', 'payments-hubtel' ),
+				'title'       => __('Your Mobile Number', 'payments-hubtel'),
 				'id'          => 'hubtel_mobile_number',
 				'type'        => 'text',
 				'placeholder' => '233.........',
-				'description' => sprintf( __( 'Your mobile number, as used on Hubtel. Beginning with %1$s233%2$s',
-					'payments-hubtel' ), '<b>', '</b>' ),
+				'description' => sprintf(__(
+					'Your mobile number, as used on Hubtel. Beginning with %1$s233%2$s',
+					'payments-hubtel'
+				), '<b>', '</b>'),
 				'desc_tip'    => false,
 			],
 			'merchant_account_number' => [
-				'title'       => __( 'Merchant Account Number', 'payments-hubtel' ),
+				'title'       => __('Merchant Account Number', 'payments-hubtel'),
 				'id'          => 'hubtel_merchant_account_number',
 				'type'        => 'text',
-				'description' => __( 'Account Number of your POS Sales Account, issued on Hubtel.',
-					'payments-hubtel' ),
+				'description' => __(
+					'Account Number of your POS Sales Account, issued on Hubtel.',
+					'payments-hubtel'
+				),
 				'desc_tip'    => false
 			],
 			'client_id'               => [
-				'title'       => __( 'Client ID / API ID', 'payments-hubtel' ),
+				'title'       => __('Client ID / API ID', 'payments-hubtel'),
 				'id'          => 'hubtel_client_id',
 				'type'        => 'text',
-				'description' => __( 'Your Client Id (consumer) or API ID (merchant) issued on Hubtel.', 'payments-hubtel' ),
+				'description' => __('Your Client Id (consumer) or API ID (merchant) issued on Hubtel.', 'payments-hubtel'),
 				'desc_tip'    => false
 			],
 			'client_secret'           => [
-				'title'       => __( 'Client Secret / API Key', 'payments-hubtel' ),
+				'title'       => __('Client Secret / API Key', 'payments-hubtel'),
 				'id'          => 'hubtel_client_secret',
 				'type'        => 'text',
-				'description' => __( 'Your Client Secret (consumer) or API Key (merchant) issued on Hubtel.',
-					'payments-hubtel' ),
+				'description' => __(
+					'Your Client Secret (consumer) or API Key (merchant) issued on Hubtel.',
+					'payments-hubtel'
+				),
 				'desc_tip'    => false
 			],
 			'activation_code'         => [
-				'title'       => __( 'Activation Key', 'payments-hubtel' ),
+				'title'       => __('Activation Key', 'payments-hubtel'),
 				'id'          => 'activation_code',
 				'type'        => 'password',
-				'description' => sprintf( __( "Code to activate plugin. %s", 'payments-hubtel' ), $valid_message ),
+				'description' => sprintf(__("Code to activate plugin. %s", 'payments-hubtel'), $valid_message),
 				'desc_tip'    => false
 			],
 			'rule'                    => [
-				'title'       => __( '', 'payments-hubtel' ),
+				'title'       => __('', 'payments-hubtel'),
 				'type'        => 'title',
-				'description' => __( '<hr/>', 'payments-hubtel' ),
+				'description' => __('<hr/>', 'payments-hubtel'),
 				'default'     => '',
 			],
 			'activation_instructions' => [
-				'title'       => __( 'Activation Instructions', 'payments-hubtel' ),
+				'title'       => __('Activation Instructions', 'payments-hubtel'),
 				'type'        => 'title',
-				'description' => __( '<ul><li>
+				'description' => __('<ul><li>
                                                 • Click <a target="_blank" href="https://paystack.com/pay/hubtel-activate">here</a>
                                                 to purchase your activation key.
                                             </li>
@@ -171,34 +192,38 @@ class Hubtel_Gateway extends WC_Payment_Gateway {
                                             <li>
                                                 • Head back here to enter your activation key to activate the plugin
                                             </li>
-                                            </ul>', 'payments-hubtel' ),
+                                            </ul>', 'payments-hubtel'),
 				'default'     => '',
 			]
 		];
 	}
 
-	public function process_admin_options() {
+	public function process_admin_options()
+	{
 		$this->init_form_fields();
 		$post_data = $this->get_post_data();
-		foreach ( $this->get_form_fields() as $key => $field ) {
-			if ( 'title' !== $this->get_field_type( $field ) ) {
+		foreach ($this->get_form_fields() as $key => $field) {
+			if ('title' !== $this->get_field_type($field)) {
 				try {
-					$this->settings[ $key ] = $this->get_field_value( $key, $field, $post_data );
-				} catch ( Exception $e ) {
-					$this->add_error( $e->getMessage() );
+					$this->settings[$key] = $this->get_field_value($key, $field, $post_data);
+				} catch (Exception $e) {
+					$this->add_error($e->getMessage());
 				}
 			}
 		}
 
-		$validity = $this->validate_request( $this->settings['activation_code'] );
-		if ( !$validity || ! $validity->valid ) {
+		$validity = $this->validate_request($this->settings['activation_code']);
+		if (!$validity || ! $validity->valid) {
 			$this->settings['enabled'] = 'no';
 		} else {
 			$this->settings['enabled'] = 'yes';
 		}
 
-		return update_option( $this->get_option_key(),
-			apply_filters( 'woocommerce_settings_api_sanitized_fields_' . $this->id, $this->settings ), 'yes' );
+		return update_option(
+			$this->get_option_key(),
+			apply_filters('woocommerce_settings_api_sanitized_fields_' . $this->id, $this->settings),
+			'yes'
+		);
 	}
 
 	/**
@@ -209,35 +234,36 @@ class Hubtel_Gateway extends WC_Payment_Gateway {
 	 * @return array
 	 * @throws Exception
 	 */
-	public function process_payment( $order_id ) {
-		$order              = wc_get_order( $order_id );
-		$order_data         = json_decode( $order );
-		$hp_settings        = get_option( 'woocommerce_payments-hubtel_settings' );
+	public function process_payment($order_id)
+	{
+		$order              = wc_get_order($order_id);
+		$order_data         = json_decode($order);
+		$hp_settings        = get_option('woocommerce_payments-hubtel_settings');
 		$this->clientId     = $hp_settings['client_id'];
 		$this->activation   = $hp_settings['activation_code'];
 		$this->clientSecret = $hp_settings['client_secret'];
 		$this->userMode     = $hp_settings['user_type'];
 
-		$validity = $this->validate_request( $this->activation );
+		$validity = $this->validate_request($this->activation);
 
-		if ( !$validity || ! $validity->valid ) {
-			$message = __( 'Order payment failed. Please retry after some time.' . json_encode($validity), 'payments-hubtel' );
-			throw new Exception( $message );
+		if (!$validity || ! $validity->valid) {
+			$message = __('Order payment failed. Please retry after some time.' . json_encode($validity), 'payments-hubtel');
+			throw new Exception($message);
 		}
 
-		if ( $this->userMode === 'merchant' ) {
+		if ($this->userMode === 'merchant') {
 			$this->merchantAccount = $hp_settings['merchant_account_number'];
 			try {
-				$redirectUrl = $this->process_merchant_payment( $order_data );
-			} catch ( Exception $e ) {
-				throw new Exception( $e->getMessage() );
+				$redirectUrl = $this->process_merchant_payment($order_data);
+			} catch (Exception $e) {
+				throw new Exception($e->getMessage());
 			}
 		} else {
 			$this->mobileNumber = $hp_settings['mobile_number'];
 			try {
-				$redirectUrl = $this->process_consumer_payment( $order_data );
-			} catch ( Exception $e ) {
-				throw new Exception( $e->getMessage() );
+				$redirectUrl = $this->process_consumer_payment($order_data);
+			} catch (Exception $e) {
+				throw new Exception($e->getMessage());
 			}
 		}
 
@@ -250,168 +276,191 @@ class Hubtel_Gateway extends WC_Payment_Gateway {
 	/**
 	 * @throws Exception
 	 */
-	function process_consumer_payment( $order_data ) {
+	function process_consumer_payment($order_data)
+	{
 		$payload = [
 			"identifier"      => $this->clientId . ':' . $this->clientSecret,
 			"amount"          => (float) $order_data->total,
 			"title"           => 'Order Payment',
-			"description"     => 'Purchase made on ' . get_bloginfo( 'name' ),
-			"clientReference" => $this->generateId( 'WOO' ) . $order_data->id,
-			"callbackUrl"     => WC()->api_request_url( 'hubtel_gateway_delayed' ),
-			"cancellationUrl" => WC()->api_request_url( 'hubtel_gateway' ) . '?o=' . $order_data->id,
-			"returnUrl"       => WC()->api_request_url( 'hubtel_gateway' ) . '?o=' . $order_data->id,
+			"description"     => 'Purchase made on ' . get_bloginfo('name'),
+			"clientReference" => $this->generateId('WOO') . $order_data->id,
+			"callbackUrl"     => WC()->api_request_url('hubtel_gateway_delayed'),
+			"cancellationUrl" => WC()->api_request_url('hubtel_gateway') . '?o=' . $order_data->id,
+			"returnUrl"       => WC()->api_request_url('hubtel_gateway') . '?o=' . $order_data->id,
 			"mobile"          => $this->mobileNumber,
 			"userMode"        => $this->userMode,
-			"site"            => get_bloginfo( 'url' )
+			"site"            => get_bloginfo('url')
 		];
 
-		$this->tail( 'Consumer Payload' );
-		$this->tail( $payload );
+		$this->tail('Consumer Payload');
+		$this->tail($payload);
 
 		$url  = "https://excelliumgh.com/cdn/plugins/woo-hubtel/pay";
 		$args = [
-			'headers' => [ 'Content-Type' => 'application/json' ],
+			'headers' => ['Content-Type' => 'application/json'],
 			'timeout' => 60,
-			'body'    => wp_json_encode( $payload )
+			'body'    => wp_json_encode($payload)
 		];
 
-		$request = wp_remote_post( $url, $args );
-		if ( ! is_wp_error( $request ) && 201 === wp_remote_retrieve_response_code( $request ) ) {
-			$response = json_decode( wp_remote_retrieve_body( $request ) );
+		$request = wp_remote_post($url, $args);
+		if (! is_wp_error($request) && 201 === wp_remote_retrieve_response_code($request)) {
+			$response = json_decode(wp_remote_retrieve_body($request));
 
 			return $response->data->paylinkUrl;
 		} else {
-			$message = __( 'Order payment failed. Please retry after some time.', 'payments-hubtel' );
-			throw new Exception( $message );
+			$message = __('Order payment failed. Please retry after some time.', 'payments-hubtel');
+			throw new Exception($message);
 		}
 	}
 
-	function process_merchant_payment( $order_data ) {
+	function process_merchant_payment($order_data)
+	{
 		$payload = [
 			"identifier"      => $this->clientId . ':' . $this->clientSecret,
 			"amount"          => (float) $order_data->total,
-			"description"     => 'Purchase made on ' . get_bloginfo( 'name' ),
-			"callbackUrl"     => WC()->api_request_url( 'hubtel_gateway_delayed' ),
-			"returnUrl"       => WC()->api_request_url( 'hubtel_gateway' ) . '?o=' . $order_data->id,
-			"cancellationUrl" => WC()->api_request_url( 'hubtel_gateway' ) . '?o=' . $order_data->id,
+			"description"     => 'Purchase made on ' . get_bloginfo('name'),
+			"callbackUrl"     => WC()->api_request_url('hubtel_gateway_delayed'),
+			"returnUrl"       => WC()->api_request_url('hubtel_gateway') . '?o=' . $order_data->id,
+			"cancellationUrl" => WC()->api_request_url('hubtel_gateway') . '?o=' . $order_data->id,
 			"accountNumber"   => $this->merchantAccount,
-			"clientReference" => $this->generateId( 'WOO' ) . $order_data->id,
+			"clientReference" => $this->generateId('WOO') . $order_data->id,
 			"userMode"        => $this->userMode,
-			"site"            => get_bloginfo( 'url' )
+			"site"            => get_bloginfo('url')
 		];
 
-		$this->tail( 'Merchant Payload' );
-		$this->tail( $payload );
+		$this->tail('Merchant Payload');
+		$this->tail($payload);
 
 		$url  = 'https://excelliumgh.com/cdn/plugins/woo-hubtel/pay';
 		$args = [
-			'headers' => [ 'Content-Type' => 'application/json' ],
+			'headers' => ['Content-Type' => 'application/json'],
 			'timeout' => 60,
-			'body'    => wp_json_encode( $payload )
+			'body'    => wp_json_encode($payload)
 		];
 
-		$request = wp_remote_post( $url, $args );
-		if ( ! is_wp_error( $request ) && 200 === wp_remote_retrieve_response_code( $request ) ) {
-			$response = json_decode( wp_remote_retrieve_body( $request ) );
-			if ( $response->responseCode === '0000' ) {
+		$request = wp_remote_post($url, $args);
+		if (! is_wp_error($request) && 200 === wp_remote_retrieve_response_code($request)) {
+			$response = json_decode(wp_remote_retrieve_body($request));
+			if ($response->responseCode === '0000') {
 				return $response->data->checkoutDirectUrl;
 			}
 		}
-		$message = __( 'Order payment failed. Please retry after some time.', 'payments-hubtel' );
-		throw new Exception( $message );
+		$message = __('Order payment failed. Please retry after some time.', 'payments-hubtel');
+		throw new Exception($message);
 	}
 
-	public function direct_feedback() {
-		if ( ! isset( $_REQUEST['o'] ) ) {
+	public function direct_feedback()
+	{
+		if (! isset($_REQUEST['o'])) {
 			exit;
 		}
 
-		$orderString = sanitize_text_field( $_REQUEST['o'] );
-		if ( strpos( $orderString, '?' ) !== false ) {
-			$order_id = substr( $orderString, 0, strpos( $orderString, '?' ) );
+		$orderString = sanitize_text_field($_REQUEST['o']);
+		if (strpos($orderString, '?') !== false) {
+			$order_id = substr($orderString, 0, strpos($orderString, '?'));
 		} else {
 			$order_id = $orderString;
 		}
-		$this->tail( 'Order Id seen as' . $order_id );
+		$this->tail('Order Id seen as' . $order_id);
 
-		$order = wc_get_order( $order_id );
+		$order = wc_get_order($order_id);
 
-		if ( ! $order ) {
+		if (! $order) {
 			return;
 		}
 
 		// Return thank-you redirect
-		wp_redirect( $this->get_return_url( $order ) );
+		wp_redirect($this->get_return_url($order));
 		exit;
 	}
 
-	public function delayed_feedback() {
-		$json     = wp_kses( file_get_contents( 'php://input' ), 'data' );
-		$response = json_decode( $json );
+	public function delayed_feedback()
+	{
+		$json     = wp_kses(file_get_contents('php://input'), 'data');
+		$response = json_decode($json);
 
-		if ( $response->ResponseCode === '0000' ) {
+		if ($response->ResponseCode === '0000') {
 			$clientReference   = $response->Data->ClientReference;
 			$externalReference = $response->Data->TransactionId ?? $response->Data->SalesInvoiceId;
-			$order_id          = $this->getOrderIdFromReference( $clientReference );
-			$order             = wc_get_order( $order_id );
+			$order_id          = $this->getOrderIdFromReference($clientReference);
+			$order             = wc_get_order($order_id);
 
 			//  Complete order and clear cart
 			$order->payment_complete();
 			WC()->cart->empty_cart();
 
 			//  Update order with external transaction
-			$order->add_order_note( sprintf( __( 'Hubtel payment successful. External Id: %s)', 'payments-hubtel' ),
-				$externalReference ) );
+			$order->add_order_note(sprintf(
+				__('Hubtel payment successful. External Id: %s)', 'payments-hubtel'),
+				$externalReference
+			));
+
+			// Auto-complete if enabled
+			$hp_settings = get_option('woocommerce_payments-hubtel_settings');
+			if (isset($hp_settings['auto_complete']) && $hp_settings['auto_complete'] === 'yes') {
+				$order->update_status('completed', __('Order auto-completed after successful Hubtel payment.', 'payments-hubtel'));
+			}
+
 			$order->save();
 		}
 		exit;
 	}
 
-	public function success_message_after_payment( $order_id ) {
-		$order = wc_get_order( $order_id );
-		if ( in_array( $order->get_status(), [ 'processing', 'completed' ] ) ) {
-			wc_print_notice( __( "Your payment has been received successfully", "payments-hubtel" ) );
+	public function success_message_after_payment($order_id)
+	{
+		$order = wc_get_order($order_id);
+		if (in_array($order->get_status(), ['processing', 'completed'])) {
+			wc_print_notice(__("Your payment has been received successfully", "payments-hubtel"));
 		}
 	}
 
-	public function admin_scripts() {
-		if ( 'woocommerce_page_wc-settings' !== get_current_screen()->id ) {
+	public function admin_scripts()
+	{
+		if ('woocommerce_page_wc-settings' !== get_current_screen()->id) {
 			return;
 		}
 
-		$admin_params = [ 'plugin_url' => Hubtel::plugin_url() ];
+		$admin_params = ['plugin_url' => Hubtel::plugin_url()];
 
-		wp_enqueue_script( 'wc_hubtel_admin', Hubtel::plugin_url() . '/assets/js/admin.js',
-			array(), Hubtel::version(), true );
+		wp_enqueue_script(
+			'wc_hubtel_admin',
+			Hubtel::plugin_url() . '/assets/js/admin.js',
+			array(),
+			Hubtel::version(),
+			true
+		);
 
-		wp_localize_script( 'wc_hubtel_admin', 'wc_hubtel_admin_params', $admin_params );
-
+		wp_localize_script('wc_hubtel_admin', 'wc_hubtel_admin_params', $admin_params);
 	}
 
-	public function tail( $str ) {
-		@file_put_contents( __DIR__ . '/bro.txt', print_r( $str, true ) . "\r\n", FILE_APPEND | LOCK_EX );
+	public function tail($str)
+	{
+		@file_put_contents(__DIR__ . '/bro.txt', print_r($str, true) . "\r\n", FILE_APPEND | LOCK_EX);
 	}
 
-	public function generateId( $prefix ): string {
-		$date  = new DateTime ();
-		$stamp = $date->format( 'Y-m-d' );
+	public function generateId($prefix): string
+	{
+		$date  = new DateTime();
+		$stamp = $date->format('Y-m-d');
 
-		return $prefix . str_replace( '-', '', $stamp ) . wp_rand( 10000, 50000 );
+		return $prefix . str_replace('-', '', $stamp) . wp_rand(10000, 50000);
 	}
 
-	public function getOrderIdFromReference( $reference ): string {
-		$date               = new DateTime ();
-		$stamp              = $date->format( 'Y-m-d' );
-		$formattedTimeStamp = str_replace( '-', '', $stamp );
-		if ( strpos( $reference, $formattedTimeStamp ) === false ) {
+	public function getOrderIdFromReference($reference): string
+	{
+		$date               = new DateTime();
+		$stamp              = $date->format('Y-m-d');
+		$formattedTimeStamp = str_replace('-', '', $stamp);
+		if (strpos($reference, $formattedTimeStamp) === false) {
 			return '';
 		}
 
-		return substr( $reference, 8 + ( strlen( $formattedTimeStamp ) ) );
+		return substr($reference, 8 + (strlen($formattedTimeStamp)));
 	}
 
-	public function validate_request( $code ) {
-		if ( empty( $code ) ) {
+	public function validate_request($code)
+	{
+		if (empty($code)) {
 			return false;
 		}
 
@@ -421,13 +470,13 @@ class Hubtel_Gateway extends WC_Payment_Gateway {
 		$args    = [
 			'headers' => $headers,
 			'timeout' => 60,
-			'body'    => wp_json_encode( [
+			'body'    => wp_json_encode([
 				'code' => $code,
 				'site' => site_url(),
-			] )
+			])
 		];
-		$request = wp_remote_post( 'https://excelliumgh.com/cdn/plugins/woo-hubtel/verify', $args );
+		$request = wp_remote_post('https://excelliumgh.com/cdn/plugins/woo-hubtel/verify', $args);
 
-		return json_decode( wp_remote_retrieve_body( $request ) );
+		return json_decode(wp_remote_retrieve_body($request));
 	}
 }

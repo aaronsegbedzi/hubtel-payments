@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @wordpress-plugin
  * Plugin Name: Payments for Hubtel
@@ -23,7 +24,7 @@
  */
 
 // Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
@@ -32,24 +33,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @class Hubtel
  */
-class Hubtel {
+class Hubtel
+{
 
 	/**
 	 * Plugin bootstrapping.
 	 */
-	public static function init() {
+	public static function init()
+	{
 
 		// Gateway class.
-		add_action( 'plugins_loaded', array( __CLASS__, 'includes' ), 0 );
+		add_action('plugins_loaded', array(__CLASS__, 'includes'), 0);
 
 		// Make the gateway available to WC.
-		add_filter( 'woocommerce_payment_gateways', array( __CLASS__, 'add_gateway' ) );
+		add_filter('woocommerce_payment_gateways', array(__CLASS__, 'add_gateway'));
 
 		// Registers WooCommerce Blocks integration.
-		add_action( 'woocommerce_blocks_loaded', array( __CLASS__, 'hubtel_blocks' ) );
+		add_action('woocommerce_blocks_loaded', array(__CLASS__, 'hubtel_blocks'));
 
-		add_filter( 'plugin_action_links', array( __CLASS__, 'my_action_links' ) );
-
+		add_filter(
+			'plugin_action_links_' . plugin_basename(__FILE__),
+			array(__CLASS__, 'my_action_links')
+		);
 	}
 
 	/**
@@ -59,12 +64,13 @@ class Hubtel {
 	 *
 	 * @return string[]
 	 */
-	static function my_action_links( $actions ) {
+	static function my_action_links($actions)
+	{
 		$new_actions = [
-			'settings' => sprintf( __( '<a href="%s">Settings</a>', 'payments-hubtel' ), esc_url( admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payments-hubtel' ) ) )
+			'settings' => sprintf(__('<a href="%s">Settings</a>', 'payments-hubtel'), esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=payments-hubtel')))
 		];
 
-		return array_merge( $new_actions, $actions );
+		return array_merge($new_actions, $actions);
 	}
 
 	/**
@@ -72,7 +78,8 @@ class Hubtel {
 	 *
 	 * @param array
 	 */
-	public static function add_gateway( $gateways ) {
+	public static function add_gateway($gateways)
+	{
 		$gateways[] = 'Hubtel_Gateway';
 
 		return $gateways;
@@ -81,10 +88,11 @@ class Hubtel {
 	/**
 	 * Plugin includes.
 	 */
-	public static function includes() {
+	public static function includes()
+	{
 
 		// Make the Hubtel_Gateway class available.
-		if ( class_exists( 'WC_Payment_Gateway' ) ) {
+		if (class_exists('WC_Payment_Gateway')) {
 			require_once __DIR__ . '/includes/hubtel-gateway.php';
 		}
 	}
@@ -94,8 +102,9 @@ class Hubtel {
 	 *
 	 * @return string
 	 */
-	public static function plugin_url() {
-		return untrailingslashit( plugins_url( '/', __FILE__ ) );
+	public static function plugin_url()
+	{
+		return untrailingslashit(plugins_url('/', __FILE__));
 	}
 
 	/**
@@ -103,7 +112,8 @@ class Hubtel {
 	 *
 	 * @return string
 	 */
-	public static function version() {
+	public static function version()
+	{
 		return '1.0.1';
 	}
 
@@ -112,27 +122,27 @@ class Hubtel {
 	 *
 	 * @return string
 	 */
-	public static function plugin_abspath() {
-		return trailingslashit( plugin_dir_path( __FILE__ ) );
+	public static function plugin_abspath()
+	{
+		return trailingslashit(plugin_dir_path(__FILE__));
 	}
 
 	/**
 	 * Registers WooCommerce Blocks integration.
 	 *
 	 */
-	public static function hubtel_blocks() {
-		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
+	public static function hubtel_blocks()
+	{
+		if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
 			require_once __DIR__ . '/includes/blocks/hubtel-blocks.php';
 			add_action(
 				'woocommerce_blocks_payment_method_type_registration',
-				function ( Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry ) {
-					$payment_method_registry->register( new Hubtel_Blocks() );
+				function (Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
+					$payment_method_registry->register(new Hubtel_Blocks());
 				}
 			);
 		}
 	}
-
-
 }
 
 Hubtel::init();
